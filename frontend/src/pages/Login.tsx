@@ -1,70 +1,72 @@
+import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
-import { useMutation } from "@tanstack/react-query";
-import { useNavigate, Link } from "react-router-dom";
-import { loginUser, fetchCurrentUser } from "../api/auth";
 import type { LoginPayload } from "../types/auth";
+import { loginUser } from "../api/auth";
 import { useAuth } from "../context/AuthContext";
 
 const Login = () => {
-  const navigate = useNavigate();
+  const { register, handleSubmit } = useForm<LoginPayload>();
   const { login } = useAuth();
-  const { register, handleSubmit, formState: { errors } } = useForm<LoginPayload>();
+  const navigate = useNavigate();
 
-  const mutation = useMutation({
-    mutationFn: loginUser,
-    onSuccess: async (data) => {
-      localStorage.setItem("token", data.token);
-      const profile = await fetchCurrentUser();
-      login({ token: data.token, role: profile.role, name: profile.name });
+  const onSubmit = async (data: LoginPayload) => {
+    try {
+      const response = await loginUser(data);
+
+      login({
+        token: response.token,
+        name: response.name,
+        role: response.role,
+      });
+
       navigate("/dashboard");
-    },
-  });
-
-  const onSubmit = (data: LoginPayload) => mutation.mutate(data);
+    } catch (error) {
+      alert("Invalid credentials");
+    }
+  };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-8 rounded-xl shadow-md w-full max-w-md">
-        <h2 className="text-2xl font-bold text-center mb-6">Login</h2>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-100 via-sky-50 to-purple-100 px-4">
+      <div className="w-full max-w-md bg-white shadow-xl rounded-3xl p-8">
+        <h2 className="text-3xl font-bold text-center text-slate-800 mb-2">
+          Welcome Back
+        </h2>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">Email</label>
-            <input
-              type="email"
-              {...register("email", { required: "Email is required" })}
-              className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="you@example.com"
-            />
-            {errors.email && <p className="text-red-500 text-sm">{errors.email.message}</p>}
-          </div>
+        <p className="text-center text-slate-500 mb-8">
+          Sign in to continue to your dashboard
+        </p>
 
-          <div>
-            <label className="block text-sm font-medium mb-1">Password</label>
-            <input
-              type="password"
-              {...register("password", { required: "Password is required" })}
-              className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="••••••••"
-            />
-            {errors.password && <p className="text-red-500 text-sm">{errors.password.message}</p>}
-          </div>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+          <input
+            {...register("email")}
+            type="email"
+            placeholder="Email"
+            className="w-full border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+          />
 
-          {mutation.isError && (
-            <p className="text-red-500 text-sm text-center">Invalid email or password.</p>
-          )}
+          <input
+            {...register("password")}
+            type="password"
+            placeholder="Password"
+            className="w-full border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+          />
 
           <button
             type="submit"
-            disabled={mutation.isPending}
-            className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-60 transition"
+            className="w-full bg-indigo-600 text-white py-3 rounded-xl font-semibold hover:bg-indigo-700 transition"
           >
-            {mutation.isPending ? "Logging in..." : "Login"}
+            Sign In
           </button>
         </form>
 
-        <p className="text-center text-sm mt-4">
-          No account? <Link to="/register" className="text-blue-600 hover:underline">Register</Link>
+        <p className="text-center mt-6 text-slate-600">
+          Don't have an account?{" "}
+          <Link
+            to="/register"
+            className="text-indigo-600 font-medium hover:underline"
+          >
+            Register
+          </Link>
         </p>
       </div>
     </div>
